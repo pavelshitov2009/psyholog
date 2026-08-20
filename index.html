@@ -633,12 +633,14 @@
   </div>
 
 <script>
-  // ====== КУДА ПРИХОДЯТ ЗАЯВКИ (Telegram) ======
-  // Заявки уходят сообщением в группу «Заявки» через бота @shitovapsyholog_bot.
-  // Токен при желании можно сбросить в @BotFather (/revoke) и заменить строку ниже.
-  const TELEGRAM_BOT_TOKEN = "8989392510:AAGsaOH3SFLBJgIQfl4il0CbKLKvJ1neK7o";
-  const TELEGRAM_CHAT_ID   = "-5315670594";
-  // =============================================
+  // ====== КУДА ПРИХОДЯТ ЗАЯВКИ ======
+  // Основной канал — Telegram-группа «Заявки» (бот @shitovapsyholog_bot).
+  // Запасной канал — письмо на почту через Web3Forms. Заявка уходит в оба места;
+  // если один канал недоступен, срабатывает второй.
+  const TELEGRAM_BOT_TOKEN   = "8989392510:AAGsaOH3SFLBJgIQfl4il0CbKLKvJ1neK7o";
+  const TELEGRAM_CHAT_ID     = "-5315670594";
+  const WEB3FORMS_ACCESS_KEY = "f7333304-4763-406d-9c99-e4e588ba4d6f";
+  // ==================================
 
   document.getElementById('year').textContent = new Date().getFullYear();
 
@@ -710,7 +712,8 @@
 
     try {
       if(!form.botcheck.checked){   // botcheck отмечается только ботами — тогда тихо ничего не шлём
-        const res = await fetch('https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/sendMessage', {
+        // Канал 1 — Telegram-группа
+        const tgReq = fetch('https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/sendMessage', {
           method: 'POST',
           body: new URLSearchParams({
             chat_id: TELEGRAM_CHAT_ID,
@@ -718,9 +721,29 @@
             parse_mode: 'HTML',
             disable_web_page_preview: 'true'
           })
-        });
-        const data = await res.json();
-        if(!data.ok) throw new Error(data.description || 'Ошибка отправки');
+        }).then(r => r.json()).then(d => { if(!d.ok) throw new Error(d.description || 'Telegram'); });
+
+        // Канал 2 — письмо на почту (Web3Forms), запасной
+        const mailReq = fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json', 'Accept':'application/json'},
+          body: JSON.stringify({
+            access_key: WEB3FORMS_ACCESS_KEY,
+            subject: 'Новая заявка с сайта — Любовь Николаевна',
+            from_name: 'Сайт-визитка',
+            Имя: name.value.trim(),
+            Контакт: contact.value.trim(),
+            Дата: date.value,
+            Время: time.value,
+            Формат: format.value,
+            Сообщение: msg || '—',
+            botcheck: form.botcheck.checked
+          })
+        }).then(r => r.json()).then(d => { if(!d.success) throw new Error(d.message || 'Email'); });
+
+        // Успех, если сработал хотя бы один канал
+        const results = await Promise.allSettled([tgReq, mailReq]);
+        if(!results.some(r => r.status === 'fulfilled')) throw new Error('Оба канала недоступны');
       }
       form.style.display = 'none';
       document.getElementById('success').classList.add('show');
