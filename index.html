@@ -638,7 +638,7 @@
   // 2. Добавь этого бота в группу «Заявки».
   // 3. Вставь токен ниже вместо ВСТАВЬ_ТОКЕН_БОТА (кавычки оставь). chat_id уже вписан.
   // Пока токен не вставлен — демо-режим: форма показывает «отправлено», но никуда не шлёт.
-  const TELEGRAM_BOT_TOKEN = "ВСТАВЬ_ТОКЕН_БОТА";
+  const TELEGRAM_BOT_TOKEN = "8989392510:AAGsaOH3SFLBJgIQfl4il0CbKLKvJ1neK7o";
   const TELEGRAM_CHAT_ID   = "-5315670594";
   // =============================================
 
@@ -713,7 +713,7 @@
     try {
       if(form.botcheck.checked){
         // сработала ловушка для ботов — тихо показываем «успех», ничего не отправляя
-      } else if(TELEGRAM_BOT_TOKEN === 'ВСТАВЬ_ТОКЕН_БОТА'){
+      } else if(TELEGRAM_BOT_TOKEN === '8989392510:AAGsaOH3SFLBJgIQfl4il0CbKLKvJ1neK7o'){
         console.log('Демо-режим. Сообщение, которое ушло бы в Telegram:\n' + text);
         await new Promise(r => setTimeout(r, 600));
       } else {
