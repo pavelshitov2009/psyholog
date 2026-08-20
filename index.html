@@ -633,12 +633,14 @@
   </div>
 
 <script>
-  // ====== НАСТРОЙКА ОТПРАВКИ ЗАЯВОК НА ПОЧТУ ======
-  // 1. Зайди на https://web3forms.com -> введи мамину почту -> получи Access Key (бесплатно).
-  // 2. Вставь его в строку ниже вместо f7333304-4763-406d-9c99-e4e588ba4d6f.
-  // Пока ключ не вставлен, форма работает в демо-режиме (письма не уходят, но показывается подтверждение).
-  const WEB3FORMS_ACCESS_KEY = "f7333304-4763-406d-9c99-e4e588ba4d6f";
-  // ================================================
+  // ====== КУДА ПРИХОДЯТ ЗАЯВКИ (Telegram) ======
+  // 1. В @BotFather создай бота (/newbot) и получи ТОКЕН (вида 123456:AAE...).
+  // 2. Добавь этого бота в группу «Заявки».
+  // 3. Вставь токен ниже вместо 8989392510:AAGsaOH3SFLBJgIQfl4il0CbKLKvJ1neK7o (кавычки оставь). chat_id уже вписан.
+  // Пока токен не вставлен — демо-режим: форма показывает «отправлено», но никуда не шлёт.
+  const TELEGRAM_BOT_TOKEN = "8989392510:AAGsaOH3SFLBJgIQfl4il0CbKLKvJ1neK7o";
+  const TELEGRAM_CHAT_ID   = "-5315670594";
+  // =============================================
 
   document.getElementById('year').textContent = new Date().getFullYear();
 
@@ -697,31 +699,31 @@
     submitBtn.disabled = true;
     submitBtn.textContent = 'Отправляем…';
 
-    const payload = {
-      access_key: WEB3FORMS_ACCESS_KEY,
-      subject: 'Новая заявка на запись с сайта',
-      from_name: 'Сайт-визитка',
-      Имя: name.value.trim(),
-      Контакт: contact.value.trim(),
-      Дата: date.value,
-      Время: time.value,
-      Формат: format.value,
-      Сообщение: document.getElementById('message').value.trim() || '—',
-      botcheck: form.botcheck.checked
-    };
+    const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const msg = document.getElementById('message').value.trim();
+    const text =
+      '🗓 <b>Новая заявка с сайта</b>\n\n' +
+      '👤 <b>Имя:</b> ' + esc(name.value.trim()) + '\n' +
+      '📞 <b>Контакт:</b> ' + esc(contact.value.trim()) + '\n' +
+      '📅 <b>Дата:</b> ' + esc(date.value) + '\n' +
+      '🕐 <b>Время:</b> ' + esc(time.value) + '\n' +
+      '💻 <b>Формат:</b> ' + esc(format.value) + '\n' +
+      '📝 <b>Запрос:</b> ' + (msg ? esc(msg) : '—');
 
     try {
-      if(WEB3FORMS_ACCESS_KEY === 'f7333304-4763-406d-9c99-e4e588ba4d6f'){
-        console.log('Демо-режим. Заявка, которая ушла бы на почту:', payload);
+      if(form.botcheck.checked){
+        // сработала ловушка для ботов — тихо показываем «успех», ничего не отправляя
+      } else if(TELEGRAM_BOT_TOKEN === '8989392510:AAGsaOH3SFLBJgIQfl4il0CbKLKvJ1neK7o'){
+        console.log('Демо-режим. Сообщение, которое ушло бы в Telegram:\n' + text);
         await new Promise(r => setTimeout(r, 600));
       } else {
-        const res = await fetch('https://api.web3forms.com/submit', {
+        const res = await fetch('https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/sendMessage', {
           method: 'POST',
-          headers: {'Content-Type':'application/json', 'Accept':'application/json'},
-          body: JSON.stringify(payload)
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: text, parse_mode: 'HTML', disable_web_page_preview: true })
         });
         const data = await res.json();
-        if(!data.success) throw new Error(data.message || 'Ошибка отправки');
+        if(!data.ok) throw new Error(data.description || 'Ошибка отправки');
       }
       form.style.display = 'none';
       document.getElementById('success').classList.add('show');
