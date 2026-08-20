@@ -634,10 +634,8 @@
 
 <script>
   // ====== КУДА ПРИХОДЯТ ЗАЯВКИ (Telegram) ======
-  // 1. В @BotFather создай бота (/newbot) и получи ТОКЕН (вида 123456:AAE...).
-  // 2. Добавь этого бота в группу «Заявки».
-  // 3. Вставь токен ниже вместо ВСТАВЬ_ТОКЕН_БОТА (кавычки оставь). chat_id уже вписан.
-  // Пока токен не вставлен — демо-режим: форма показывает «отправлено», но никуда не шлёт.
+  // Заявки уходят сообщением в группу «Заявки» через бота @shitovapsyholog_bot.
+  // Токен при желании можно сбросить в @BotFather (/revoke) и заменить строку ниже.
   const TELEGRAM_BOT_TOKEN = "8989392510:AAGsaOH3SFLBJgIQfl4il0CbKLKvJ1neK7o";
   const TELEGRAM_CHAT_ID   = "-5315670594";
   // =============================================
@@ -711,16 +709,15 @@
       '📝 <b>Запрос:</b> ' + (msg ? esc(msg) : '—');
 
     try {
-      if(form.botcheck.checked){
-        // сработала ловушка для ботов — тихо показываем «успех», ничего не отправляя
-      } else if(TELEGRAM_BOT_TOKEN === '8989392510:AAGsaOH3SFLBJgIQfl4il0CbKLKvJ1neK7o'){
-        console.log('Демо-режим. Сообщение, которое ушло бы в Telegram:\n' + text);
-        await new Promise(r => setTimeout(r, 600));
-      } else {
+      if(!form.botcheck.checked){   // botcheck отмечается только ботами — тогда тихо ничего не шлём
         const res = await fetch('https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/sendMessage', {
           method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: text, parse_mode: 'HTML', disable_web_page_preview: true })
+          body: new URLSearchParams({
+            chat_id: TELEGRAM_CHAT_ID,
+            text: text,
+            parse_mode: 'HTML',
+            disable_web_page_preview: 'true'
+          })
         });
         const data = await res.json();
         if(!data.ok) throw new Error(data.description || 'Ошибка отправки');
